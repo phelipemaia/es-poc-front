@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>:: Hyatt - ExceedLabs ::</title>
+    <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" />
+    <script src="http://code.angularjs.org/1.2.28/angular.js"></script>
+    <script>
+        localStorage.removeItem('user');
+        localStorage.removeItem('order');
+        function onChange(value) {
+            if (value) {
+                localStorage.setItem("user", value);
+                var order = localStorage.getItem("order");
+                if (order) {
+                    window.location = "./hyatt.html";
+                }
+            }
+        }
+        function onChangeOrder(value) {
+            if (value) {
+                localStorage.setItem("order", value);
+                var user = localStorage.getItem("user");
+                if (user) {
+                    window.location = "./hyatt.html";
+                }
+            }
+        }
+    </script>
+</head>
+<body>
+<div class="col-xs-9 col-xs-offset-3 main">
+    <img src="./hyatt.jpg" style="width: 300px; margin-left: 18%;" /><br />
+    <select onchange="onChange(this.value)">
+        <option value="">Select user</option>
+        <option value="uamericas">User from Americas</option>
+        <option value="ucorporate">User from Corporate</option>
+    </select>
+    <select onchange="onChangeOrder(this.value)">
+        <option value="">Select order</option>
+        <option value="ViewsCount">Visualizations</option>
+        <option value="PublishingDate">Publishing date</option>
+    </select>
+</div>
+</body>
+</html>

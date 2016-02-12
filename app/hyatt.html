@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>:: Hyatt - ExceedLabs ::</title>
+    <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" />
+    <script src="http://code.angularjs.org/1.2.28/angular.js"></script>
+    <script src="https://code.angularjs.org/1.2.28/angular-sanitize.min.js"></script>
+    <script src="http://rawgit.com/YousefED/ElasticUI/master/examples/demo/lib/elasticsearch.angular.js"></script>
+    <script src="http://rawgit.com/YousefED/ElasticUI/master/examples/demo/lib/elastic.js"></script>
+    <script src="http://rawgit.com/YousefED/ElasticUI/master/dist/elasticui.min.js"></script>
+    <style>
+        .sidebar {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            z-index: 1000;
+            display: block;
+            padding: 20px;
+            overflow-x: hidden;
+            overflow-y: auto;
+            background-color: #f5f5f5;
+            border-right: 1px solid #eee;
+        }
+
+        .instructions {
+            display: block;
+            margin: 0 auto;
+            width: 450px;
+        }
+    </style>
+
+</head>
+
+<body ng-app="tutorial" id="body" ng-controller="hyattCtrl" eui-index="'hyatt'" eui-sort="ejs.Sort({{order}}).order('desc')" eui-highlight="ejs.Highlight('Body').preTags('<mark>').postTags('</mark>')" eui-enabled="true">
+
+<div class="container-fluid">
+
+    <div class="row">
+        <div class="col-xs-3 sidebar">
+            <h3>Search</h3>
+            <eui-searchbox field="'Body'"></eui-searchbox>
+            <h3>Results Per Page</h3>
+            <select ng-model="indexVM.pageSize">
+                <option ng-repeat="item in [10, 20, 50, 100]">{{item}}</option>
+            </select>
+            <h3>Filter by Brand</h3>
+            <ul class="nav nav-list" eui-aggregation="ejs.TermsAggregation('Brands').field('Brands').size(5)">
+                <li ng-repeat="bucket in aggResult.buckets">
+                    <label class="checkbox" eui-filter="ejs.TermsFilter('Brands', bucket.key)">
+                        <input type="checkbox" ng-model="filter.enabled">
+                        {{ bucket.key | brand }} ({{bucket.doc_count}})
+                    </label>
+                </li>
+            </ul>
+            <h3>Filter By Region</h3>
+            <ul class="nav nav-list" eui-aggregation="ejs.TermsAggregation('Regions').field('Regions').size(5)">
+                <li ng-repeat="bucket in aggResult.buckets">
+                    <label class="checkbox" eui-filter="ejs.TermsFilter('Regions', bucket.key)">
+                        <input type="checkbox" ng-model="filter.enabled">
+                        {{ bucket.key | region }} ({{bucket.doc_count}})
+                    </label>
+                </li>
+            </ul>
+            <h3>Filter By Department</h3>
+            <ul class="nav nav-list" eui-aggregation="ejs.TermsAggregation('Department').field('Department').size(5)">
+                <li ng-repeat="bucket in aggResult.buckets">
+                    <label class="checkbox" eui-filter="ejs.TermsFilter('Department', bucket.key)">
+                        <input type="checkbox" id="{{bucket.key}}" ng-model="filter.enabled" ng-checked="obj(this, ejs, bucket.key)">
+                        {{ bucket.key }} ({{bucket.doc_count}})
+                    </label>
+                </li>
+            </ul>
+
+        </div>
+
+        <div class="col-xs-9 col-xs-offset-3 main">
+            <img src="./hyatt.jpg" style="width: 300px; margin-left: 30%;" />
+            <h1>Results</h1>
+
+            <ul>
+                <li style="padding-bottom: 10px;" ng-repeat="doc in indexVM.results.hits.hits">
+                    <b>Id:</b> {{doc._source.Id}} <br />
+                    <b>Visualizations:</b> {{doc._source.ViewsCount}} <br />
+                    <b>Regions:</b> {{doc._source.Regions}} <br />
+                    <b>Brands:</b> {{doc._source.Brands}} <br />
+                    <b>Description:</b> {{doc._source.ShortDesc}} <br />
+                    <pre><p ng-bind-html="doc._source.Body"></p></pre>
+                </li>
+            </ul>
+            <eui-simple-paging></eui-simple-paging>
+        </div>
+    </div>
+</div>
+</body>
+<script>
+    angular
+            .module('tutorial', ['elasticui', 'ngSanitize'])
+            .constant('euiHost', 'http://52.1.230.84:9200')
+            .filter('brand', function() {
+                return function(name) {
+                    var obj = {'az': 'Andaz',
+                        'hh': 'Hyatt House',
+                        'hp': 'Hyatt Place',
+                        'gh': 'Grand Hyatt',
+                        'hr': 'Hyatt Regency',
+                        'hy': 'Hyatt',
+                        'ph': 'Park Hyatt',
+                        'hc': 'Hyatt Centric',
+                        'zl': 'Ziva/Zilara',
+                        'zv': 'Ziva/Zilara',
+                        '71': 'Corporate Office'
+                    };
+                    return obj[name];
+                };
+            })
+            .filter('region', function() {
+                return function(name) {
+                    var obj = {'am': 'Americas',
+                        'ap': 'ASPAC',
+                        'ea': 'EAME / SWA'
+                    };
+                    return obj[name];
+                };
+            })
+            .filter('department', function() {
+                return function(name) {
+                    var obj = {'am': 'Americas',
+                        'ap': 'ASPAC',
+                        'ea': 'EAME / SWA'
+                    };
+                    return obj[name];
+                };
+            })
+            .controller('hyattCtrl', ['$scope', function($scope) {
+                var order = localStorage.getItem("order");
+                if (order) {
+                    document.getElementById("body").setAttribute("eui-sort", "ejs.Sort('"+order+"').order('desc')");
+                    $scope.order = "'" + order + "'";
+                } else {
+                    document.getElementById("body").setAttribute("eui-sort", "ejs.Sort('ViewsCount').order('desc')");
+                    $scope.order = "'ViewsCount'";
+                }
+                $scope.obj = function obj(THAT, ejs, val) {
+                    var user = localStorage.getItem("user");
+                    if (user) {
+                        if (user === "uamericas" && val === 'americas') {
+                            setTimeout(function() {
+                                document.getElementById(val).click();
+                                localStorage.removeItem('user');
+                            }, 1000);
+                            return true;
+                        } else if (user === "ucorporate" && val === 'corporate') {
+                            setTimeout(function() {
+                                document.getElementById(val).click();
+                                localStorage.removeItem('user');
+                            }, 1000);
+                            return true;
+                        }
+                    }
+                    return false;
+                };
+            }]);
+</script>
+</html>
